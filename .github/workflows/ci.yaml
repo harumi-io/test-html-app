@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/**'
-      - 'k8s/**'
+      - 'deploy/**'
       - 'Dockerfile'
 
 env:
@@ -62,7 +62,7 @@ jobs:
       - name: Calculate config hash
         id: config-hash
         run: |
-          CONFIG_HASH=$(sha256sum k8s/configmap.yaml | cut -c1-8)
+          CONFIG_HASH=$(sha256sum deploy/configmap.yaml | cut -c1-8)
           echo "hash=$CONFIG_HASH" >> $GITHUB_OUTPUT
 
       # Update deployment manifest
@@ -71,12 +71,12 @@ jobs:
           # Update image tag if we built a new image
           if [ -n "${{ env.IMAGE_TAG }}" ]; then
             echo "Updating image tag to ${{ env.IMAGE_TAG }}"
-            sed -i "s|image: .*harumi-dev-test-html-app:.*|image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}|" k8s/deployment.yaml
+            sed -i "s|image: .*harumi-dev-test-html-app:.*|image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}|" deploy/deployment.yaml
           fi
 
           # Always update config hash to trigger rolling update if config changed
           echo "Updating config hash to ${{ steps.config-hash.outputs.hash }}"
-          sed -i "s|harumi.io/config-hash: .*|harumi.io/config-hash: \"${{ steps.config-hash.outputs.hash }}\"|" k8s/deployment.yaml
+          sed -i "s|harumi.io/config-hash: .*|harumi.io/config-hash: \"${{ steps.config-hash.outputs.hash }}\"|" deploy/deployment.yaml
 
       # Commit and push changes back to repo
       - name: Commit and push changes
@@ -85,10 +85,10 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Check if there are changes to commit
-          if git diff --quiet k8s/deployment.yaml; then
+          if git diff --quiet deploy/deployment.yaml; then
             echo "No changes to deployment.yaml"
           else
-            git add k8s/deployment.yaml
+            git add deploy/deployment.yaml
             git commit -m "ci: update deployment [skip ci]
 
             Image: ${{ env.IMAGE_TAG || 'unchanged' }}

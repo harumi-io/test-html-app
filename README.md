@@ -16,17 +16,17 @@ Developer Push -> GitHub Actions (Build/Update) -> Git Repo
 1. **Code Change**: Developer pushes changes to `src/` or `Dockerfile`
    - GitHub Actions builds new Docker image
    - Pushes to ECR
-   - Updates `k8s/deployment.yaml` with new image tag
+   - Updates `deploy/deployment.yaml` with new image tag
    - Commits and pushes back to repo
 
-2. **Config Change**: Developer updates `k8s/configmap.yaml`
+2. **Config Change**: Developer updates `deploy/configmap.yaml`
    - GitHub Actions calculates new config hash
-   - Updates annotation in `k8s/deployment.yaml`
+   - Updates annotation in `deploy/deployment.yaml`
    - Commits and pushes back to repo
    - Kubernetes triggers rolling update due to annotation change
 
 3. **ArgoCD Sync**: ArgoCD watches the repo
-   - Detects changes in `k8s/` directory
+   - Detects changes in `deploy/` directory
    - Syncs to Kubernetes cluster
    - Rolling update occurs
 
@@ -54,7 +54,7 @@ Developer Push -> GitHub Actions (Build/Update) -> Git Repo
 
 3. **Deploy ArgoCD Application**:
    ```bash
-   kubectl apply -f k8s/argocd-app.yaml
+   kubectl apply -f deploy/argocd-app.yaml
    ```
 
 ## Testing
@@ -68,7 +68,7 @@ Developer Push -> GitHub Actions (Build/Update) -> Git Repo
 
 2. **Test Config Update**:
    ```bash
-   # Make a change to k8s/configmap.yaml
+   # Make a change to deploy/configmap.yaml
    git add . && git commit -m "test: update config" && git push
    # Watch GitHub Actions update config hash and ArgoCD sync
    ```
