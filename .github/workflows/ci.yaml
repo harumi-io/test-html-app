@@ -1,0 +1,97 @@
+name: CI-Driven Write-Back
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'k8s/**'
+      - 'Dockerfile'
+
+env:
+  AWS_REGION: us-east-2
+  ECR_REGISTRY: 715841362904.dkr.ecr.us-east-2.amazonaws.com
+  ECR_REPOSITORY: harumi-dev-test-html-app
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::715841362904:role/harumi-us-east-2-github-cicd-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Check if source files changed (for conditional build)
+      - name: Check for source changes
+        id: changes
+        run: |
+          if git diff --name-only HEAD~1 HEAD | grep -qE '^(src/|Dockerfile)'; then
+            echo "build_image=true" >> $GITHUB_OUTPUT
+          else
+            echo "build_image=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Build and push Docker image only if source changed
+      - name: Build and push Docker image
+        if: steps.changes.outputs.build_image == 'true'
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          docker build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${IMAGE_TAG} .
+          docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${IMAGE_TAG} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${IMAGE_TAG}
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+
+      # Calculate config hash for rolling update trigger
+      - name: Calculate config hash
+        id: config-hash
+        run: |
+          CONFIG_HASH=$(sha256sum k8s/configmap.yaml | cut -c1-8)
+          echo "hash=$CONFIG_HASH" >> $GITHUB_OUTPUT
+
+      # Update deployment manifest
+      - name: Update deployment manifest
+        run: |
+          # Update image tag if we built a new image
+          if [ -n "${{ env.IMAGE_TAG }}" ]; then
+            echo "Updating image tag to ${{ env.IMAGE_TAG }}"
+            sed -i "s|image: .*harumi-dev-test-html-app:.*|image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}|" k8s/deployment.yaml
+          fi
+
+          # Always update config hash to trigger rolling update if config changed
+          echo "Updating config hash to ${{ steps.config-hash.outputs.hash }}"
+          sed -i "s|harumi.io/config-hash: .*|harumi.io/config-hash: \"${{ steps.config-hash.outputs.hash }}\"|" k8s/deployment.yaml
+
+      # Commit and push changes back to repo
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Check if there are changes to commit
+          if git diff --quiet k8s/deployment.yaml; then
+            echo "No changes to deployment.yaml"
+          else
+            git add k8s/deployment.yaml
+            git commit -m "ci: update deployment [skip ci]
+
+            Image: ${{ env.IMAGE_TAG || 'unchanged' }}
+            Config hash: ${{ steps.config-hash.outputs.hash }}"
+            git push
+          fi

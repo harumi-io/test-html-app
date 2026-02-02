@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harumi Test App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            text-align: center;
+            max-width: 500px;
+        }
+        h1 {
+            color: #1a1a2e;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+        .status {
+            background: #10b981;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+        .info {
+            color: #6b7280;
+            line-height: 1.6;
+        }
+        .info strong {
+            color: #1a1a2e;
+        }
+        .version {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Harumi Test App</h1>
+        <div class="status">Running</div>
+        <p class="info">
+            This is a test application for validating the<br>
+            <strong>CI-Driven Write-Back</strong> deployment pattern<br>
+            with <strong>ArgoCD</strong> and <strong>External Secrets</strong>.
+        </p>
+        <div class="version">
+            Version: 1.0.0 | Environment: dev
+        </div>
+    </div>
+</body>
+</html>
