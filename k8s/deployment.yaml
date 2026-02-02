@@ -17,7 +17,7 @@ spec:
         app: test-html-app
       annotations:
         # Config hash updated by CI pipeline to trigger rolling updates
-        harumi.io/config-hash: "PLACEHOLDER"
+        harumi.io/config-hash: "f345ad12"
     spec:
       containers:
         - name: nginx
