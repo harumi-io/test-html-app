@@ -24,7 +24,7 @@ spec:
       containers:
         - name: nginx
           # Image tag updated by CI pipeline
-          image: 715841362904.dkr.ecr.us-east-2.amazonaws.com/harumi-dev-test-html-app:c05d5e97c4288056cee9ae42eb18f816e422ee46
+          image: 715841362904.dkr.ecr.us-east-2.amazonaws.com/harumi-dev-test-html-app:4d15c938608590d9798e6b8dbf9111030f82fb7d
           ports:
             - containerPort: 80
               name: http
