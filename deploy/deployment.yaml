@@ -17,7 +17,7 @@ spec:
         app: test-html-app
       annotations:
         # Config hash updated by CI pipeline to trigger rolling updates
-        harumi.io/config-hash: "f345ad12"
+        harumi.io/config-hash: "a082adf3"
     spec:
       imagePullSecrets:
         - name: ecr-secret
